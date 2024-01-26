@@ -51,4 +51,4 @@ jobs:
       - name: Create a release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gradle -q printChangeLog | gh release create ${{ github.ref_name }} build/libs/*.jar build/launch4j/*.exe -F -
+        run: gradle -q printChangeLog | gh release create ${{ github.ref_name }} build/libs/*.jar -F -
