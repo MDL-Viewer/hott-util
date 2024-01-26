@@ -1,0 +1,9 @@
+name: Build, publish and release
+on:
+  push:
+    tags:
+      - v*.*.*  # only on release tags
+
+jobs:
+  build:
+    uses: MDL-Viewer/hott-util/.github/workflows/build.yaml

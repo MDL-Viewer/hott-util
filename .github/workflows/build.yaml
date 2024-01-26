@@ -1,8 +1,11 @@
 name: Build, publish and release
 on:
-  push:
-    tags:
-      - v*.*.*  # only on release tags
+  workflow_call:
+    inputs:
+      java_version:
+        required: true
+        type: string
+        default: 17
 
 jobs:
   build:
@@ -22,7 +25,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: ${{ inputs.java_version }}
 
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v2
@@ -41,4 +44,4 @@ jobs:
       - name: Create a release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gradle -q printChangeLog | gh release create ${{ github.ref_name }} build/libs/*.jar -F -
+        run: gradle -q printChangeLog | gh release create ${{ github.ref_name }} build/libs/*.jar build/launch4j/*.exe -F -
