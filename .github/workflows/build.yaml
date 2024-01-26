@@ -7,10 +7,8 @@ on:
         default: "17"
     secrets:
       GPR_USER:
-        type: string
         required: true
       GPR_TOKEN:
-        type: string
         required: true
 
 jobs:
