@@ -6,4 +6,4 @@ on:
 
 jobs:
   build:
-    uses: MDL-Viewer/hott-util/.github/workflows/build.yaml
+    uses: MDL-Viewer/hott-util/.github/workflows/build.yaml@main
