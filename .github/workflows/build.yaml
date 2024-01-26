@@ -34,7 +34,7 @@ jobs:
       - name: Build with Gradle
         run: gradle build
         env:
-          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_ACTOR: ${{ secrets.GPR_USER }}
           GITHUB_TOKEN: ${{ secrets.GPR_TOKEN }} # needed to fetch from other repos - github.token is limited to current repo
 
       - name: Publish to GitHub package registry
