@@ -5,6 +5,9 @@ on:
       java_version:
         type: string
         default: "17"
+      artifacts:
+        type: string
+        default: build/libs/*.jar
     secrets:
       GPR_USER:
         required: true
@@ -51,4 +54,4 @@ jobs:
       - name: Create a release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gradle -q printChangeLog | gh release create ${{ github.ref_name }} build/libs/*.jar -F -
+        run: gradle -q printChangeLog | gh release create ${{ github.ref_name }} ${{ inputs.artifacts }} -F -
