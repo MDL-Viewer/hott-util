@@ -25,9 +25,9 @@ class LogFormatter : Formatter() {
         if (record == null) return ""
 
         val now: Long = record.millis - start
-        val parameters: Array<out Any>? = record.parameters;
+        val parameters: Array<out Any>? = record.parameters
         val message: String = if (parameters == null || parameters.isEmpty()) record.message else MessageFormat.format(record.message, *parameters)
-        val threadName: String = getThreadById(record.getLongThreadID()).name
+        val threadName: String = getThreadById(record.longThreadID).name
         val className: String = record.sourceClassName
         val methodName: String = record.sourceMethodName
         val result: String = String.format("----------------------------------------------------------%n%d [%s] %s.%s%n%s%n", now, threadName, className , methodName, message)

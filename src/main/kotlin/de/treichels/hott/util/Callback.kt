@@ -5,13 +5,6 @@ import java.io.OutputStream
 import java.util.concurrent.CancellationException
 
 interface Callback {
-    val workDone: Long
-    val totalWork: Long
-    val progress: Double
-    val subWorkDone: Long
-    val subTotalWork: Long
-    val subProgress: Double
-
     fun updateMessage(message: String)
 
     fun updateProgress(workDone: Long, totalWork: Long)
@@ -29,23 +22,19 @@ interface Callback {
 
 abstract class AbstractCallback : Callback {
     private var cancelled = false
-    override var workDone = 0L
-    override var totalWork = 1L
-    override var progress = 0.0
-    override var subWorkDone = 0L
-    override var subTotalWork = 1L
-    override var subProgress = 0.0
+    protected var workDone = 0L
+    protected var totalWork = 1L
+    protected var subWorkDone = 0L
+    protected var subTotalWork = 1L
 
     override fun updateProgress(workDone: Long, totalWork: Long) {
         this.workDone = workDone
         this.totalWork = totalWork
-        this.progress = workDone.toDouble() / totalWork.toDouble()
     }
 
     override fun updateSubProgress(subWorkDone: Long, subTotalWork: Long) {
         this.subWorkDone = subWorkDone
         this.subTotalWork = subTotalWork
-        this.subProgress = subWorkDone.toDouble() / subTotalWork.toDouble()
     }
 
     override fun isCancelled(): Boolean = cancelled
@@ -73,14 +62,14 @@ class SimpleCallback : AbstractCallback() {
 
     override fun updateProgress(workDone: Long, totalWork: Long) {
         super.updateProgress(workDone, totalWork)
-        val percent = (progress * 100).toInt()
+        val percent = (workDone * 100 / totalWork).toInt()
 
         println("progress: $workDone of $totalWork ($percent %)")
     }
 
     override fun updateSubProgress(subWorkDone: Long, subTotalWork: Long) {
         super.updateSubProgress(subWorkDone, subTotalWork)
-        val percent = subWorkDone * 100 / subTotalWork
+        val percent = (subWorkDone * 100 / subTotalWork).toInt()
 
         println("sub progress: $subWorkDone of $subTotalWork ($percent %)")
     }
@@ -103,7 +92,8 @@ private fun update(callback: Callback?, counter: Long, total: Long?): Long {
     return counter + 1
 }
 
-class CallbackInputStream(private val callback: Callback?, private val parent: InputStream, private val total: Long?) : InputStream() {
+class CallbackInputStream(private val callback: Callback?, private val parent: InputStream, private val total: Long?) :
+    InputStream() {
     private var counter = 0L
 
     override fun read(): Int {
@@ -112,7 +102,11 @@ class CallbackInputStream(private val callback: Callback?, private val parent: I
     }
 }
 
-class CallbackOutputStream(private val callback: Callback?, private val parent: OutputStream, private val total: Long?) : OutputStream() {
+class CallbackOutputStream(
+    private val callback: Callback?,
+    private val parent: OutputStream,
+    private val total: Long?
+) : OutputStream() {
     private var counter = 0L
 
     override fun write(b: Int) {
