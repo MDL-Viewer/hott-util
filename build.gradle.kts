@@ -5,10 +5,15 @@ plugins {
     id("java-library")
     id("maven-publish")
     id("com.github.jmongard.git-semver-plugin")
+    id("org.openjfx.javafxplugin")
 }
 
 repositories {
     mavenCentral()
+}
+
+javafx {
+    modules = listOf("javafx.base")
 }
 
 dependencies {

@@ -11,6 +11,10 @@
  */
 package de.treichels.hott.util
 
+import javafx.beans.InvalidationListener
+import javafx.beans.Observable
+import javafx.beans.value.ObservableValue
+import javafx.beans.value.WritableValue
 import java.io.File
 import java.io.IOException
 import java.io.InputStreamReader
@@ -19,6 +23,7 @@ import java.util.*
 import java.util.jar.JarFile
 import java.util.logging.LogManager
 import kotlin.reflect.KClass
+import kotlin.reflect.KProperty
 
 /**
  * @author Oliver Treichel &lt;oli@treichels.de&gt;
@@ -27,7 +32,8 @@ import kotlin.reflect.KClass
 object Util {
     private const val PARAM_OFFLINE = "offline"
     private const val PARAM_DEBUG = "debug"
-    private const val LATEST_VERSIONS_URL = "https://drive.google.com/uc?export=download&id=0B_uPguA0xiT4SUl1V1VKYXFjWHc"
+    private const val LATEST_VERSIONS_URL =
+        "https://drive.google.com/uc?export=download&id=0B_uPguA0xiT4SUl1V1VKYXFjWHc"
     private val latestVersions = Properties()
     val OFFLINE = java.lang.Boolean.getBoolean(PARAM_OFFLINE)
     val DEBUG = java.lang.Boolean.getBoolean(PARAM_DEBUG)
@@ -60,14 +66,14 @@ object Util {
                 sb.append("| ")
 
                 (0..15).asSequence()
-                        .filter { addr + it < len }
-                        .map { (data[addr + it].toInt() and 0xff).toChar() }
-                        .forEach {
-                            if (it.code in 0x20..0x7e)
-                                sb.append(it)
-                            else
-                                sb.append('.')
-                        }
+                    .filter { addr + it < len }
+                    .map { (data[addr + it].toInt() and 0xff).toChar() }
+                    .forEach {
+                        if (it.code in 0x20..0x7e)
+                            sb.append(it)
+                        else
+                            sb.append('.')
+                    }
 
                 sb.append('\n')
                 addr += 16
@@ -104,22 +110,22 @@ object Util {
                 sb.append("| ")
 
                 (0..7).asSequence()
-                        .filter { addr + it < len }
-                        .map { (data[addr + it].toInt() and 0xffff) }
-                        .forEach {
-                            val lb = (it ushr 8) and 0xff
-                            val hb = it and 0xff
+                    .filter { addr + it < len }
+                    .map { (data[addr + it].toInt() and 0xffff) }
+                    .forEach {
+                        val lb = (it ushr 8) and 0xff
+                        val hb = it and 0xff
 
-                            if (lb in 0x20..0x7e)
-                                sb.append(lb.toChar())
-                            else
-                                sb.append('.')
+                        if (lb in 0x20..0x7e)
+                            sb.append(lb.toChar())
+                        else
+                            sb.append('.')
 
-                            if (hb in 0x20..0x7e)
-                                sb.append(hb.toChar())
-                            else
-                                sb.append('.')
-                        }
+                        if (hb in 0x20..0x7e)
+                            sb.append(hb.toChar())
+                        else
+                            sb.append('.')
+                    }
 
                 sb.append('\n')
                 addr += 8
@@ -171,7 +177,73 @@ object Util {
     private fun sourceLocation(clazz: KClass<*>) = File(clazz.java.protectionDomain.codeSource.location.toURI())
 
     fun enableLogging() {
-        if (DEBUG) LogManager.getLogManager().readConfiguration(ClassLoader.getSystemResourceAsStream("logging.properties"))
+        if (DEBUG) LogManager.getLogManager()
+            .readConfiguration(ClassLoader.getSystemResourceAsStream("logging.properties"))
+    }
+}
+
+/*
+ An abstract base class for objects that can be observed.
+ The object can signal that its state has changed on some way by calling the invalidate() method.
+ The method will then inform all listeners about the state change.
+ */
+abstract class ObservableBase : Observable {
+    // listener list
+    private val listeners = mutableListOf<InvalidationListener>()
+
+    override fun addListener(listener: InvalidationListener?) {
+        if (listener != null) listeners.add(listener)
+    }
+
+    override fun removeListener(listener: InvalidationListener?) {
+        if (listener != null) listeners.remove(listener)
+    }
+
+    fun invalidate() {
+        listeners.forEach { it.invalidated(this) }
+    }
+}
+
+/*
+ A delegator that allows a val to be backed by an ObservableValue (e.g. a Property).
+ This avoids the need to call prop.value very time.
+
+ Example:
+    val prop = SimpleStringProperty("initial value")
+    val value by prop
+
+    println(value) => "initial value"
+ */
+operator fun <T> ObservableValue<T>.getValue(thisRef: Any?, property: KProperty<*>): T {
+    return value
+}
+
+/*
+ A delegator that allows a var to be backed by a WritableValue (e.g. a Property).
+ This avoids the need to call prop.value = "new value" every time.
+
+ Example:
+    val prop = SimpleStringProperty("initial value")
+    var value by prop
+
+    println(value) => "initial value"
+    value = "new value"
+    println(value) => "new value"
+ */
+operator fun <T> WritableValue<T>.setValue(thisRef: Any?, property: KProperty<*>, value: T) {
+    this.value = value
+}
+
+class singleAssign<T> {
+    private var value: T? = null
+
+    operator fun getValue(thisRef: Any?, property: KProperty<*>): T {
+        return value ?: throw UninitializedPropertyAccessException()
+    }
+
+    operator fun setValue(thisRef: Any?, property: KProperty<*>, value: T) {
+        if (this.value != null) throw IllegalStateException("Val ${property.name} was already assigned in class ${thisRef?.javaClass?.name}!")
+        this.value = value
     }
 }
 
